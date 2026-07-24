@@ -1,19 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Redirect } from 'expo-router';
 
 export default function Index() {
-  return (
-    <View style={styles.container}>
-      <Text>Mini Deals Explorer</Text>
-      <Text>Foundation Ready</Text>
-    </View>
-  );
+  return <Redirect href="/sign-in" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-});
