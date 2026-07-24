@@ -1,5 +1,5 @@
 import { FlashList } from '@shopify/flash-list';
-import { Redirect, router } from 'expo-router';
+import { Redirect } from 'expo-router';
 import {
   ActivityIndicator,
   Pressable,
@@ -9,12 +9,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DealCard } from '@/src/features/deals/components/DealCard';
 import { useDeals } from '@/src/features/deals/hooks/useDeals';
-import type { Deal } from '@/src/features/deals/types/deal';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { colors, radius, spacing, typography } from '@/src/theme';
-
-const ESTIMATED_ITEM_SIZE = 96;
+import { formatCurrency } from '@/src/utils/formatCurrency';
 
 export default function DealsScreen() {
   const { isAuthenticated } = useAuth();
@@ -43,7 +42,7 @@ export default function DealsScreen() {
           <Pressable
             style={styles.retryButton}
             onPress={() => {
-              refetch();
+              void refetch();
             }}
             accessibilityRole="button"
             accessibilityLabel="Retry">
@@ -64,30 +63,44 @@ export default function DealsScreen() {
     );
   }
 
+  const totalRaised = data.reduce(
+    (sum, deal) => sum + deal.stats.total_raised_subscribed,
+    0,
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <FlashList
         data={data}
         keyExtractor={(item) => item.id}
-        estimatedItemSize={ESTIMATED_ITEM_SIZE}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => <DealRow item={item} />}
+        ListHeaderComponent={
+          <SummaryHeader dealCount={data.length} totalRaised={totalRaised} />
+        }
+        renderItem={({ item }) => <DealCard deal={item} />}
       />
     </SafeAreaView>
   );
 }
 
-function DealRow({ item }: { readonly item: Deal }) {
+function SummaryHeader({
+  dealCount,
+  totalRaised,
+}: {
+  readonly dealCount: number;
+  readonly totalRaised: number;
+}) {
   return (
-    <Pressable
-      style={styles.row}
-      onPress={() => router.push(`/deals/${item.id}`)}
-      accessibilityRole="button"
-      accessibilityLabel={`Open ${item.name}`}>
-      <Text style={styles.name}>{item.name}</Text>
-      <Text style={styles.entity}>{item.entity_name}</Text>
-      <Text style={styles.status}>{item.status.charAt(0).toUpperCase() + item.status.slice(1)}</Text>
-    </Pressable>
+    <View style={styles.summary}>
+      <View style={styles.summaryItem}>
+        <Text style={styles.summaryLabel}>Deals</Text>
+        <Text style={styles.summaryValue}>{dealCount}</Text>
+      </View>
+      <View style={styles.summaryItem}>
+        <Text style={styles.summaryLabel}>Total Raised</Text>
+        <Text style={styles.summaryValue}>{formatCurrency(totalRaised)}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -122,26 +135,22 @@ const styles = StyleSheet.create({
   listContent: {
     padding: spacing.lg,
   },
-  row: {
-    borderWidth: 1,
-    borderColor: colors.black,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+  summary: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  summaryItem: {
+    flex: 1,
     gap: spacing.xs,
   },
-  name: {
-    fontSize: typography.sizes.lg,
-    fontWeight: '600',
-    color: colors.black,
-  },
-  entity: {
+  summaryLabel: {
     fontSize: typography.sizes.md,
-    color: colors.black,
+    color: colors.muted,
   },
-  status: {
-    fontSize: typography.sizes.sm,
+  summaryValue: {
+    fontSize: typography.sizes.xl,
+    fontWeight: '700',
     color: colors.black,
-    textTransform: 'capitalize',
   },
 });
