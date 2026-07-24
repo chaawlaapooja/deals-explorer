@@ -1,8 +1,15 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { Button, StyleSheet, Text, View } from 'react-native';
 
+import { useAuth } from '@/src/providers/AuthProvider';
+
 export default function InvestScreen() {
+  const { isAuthenticated } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
+
+  if (!isAuthenticated) {
+    return <Redirect href="/sign-in" />;
+  }
 
   return (
     <View style={styles.container}>
@@ -10,7 +17,7 @@ export default function InvestScreen() {
       <Text style={styles.description}>
         Placeholder invest screen for deal {id}. Submit to continue.
       </Text>
-      <Button title="Submit Investment" onPress={() => router.replace('/success')} />
+      <Button title="Submit Investment" onPress={() => router.push('/success')} />
     </View>
   );
 }

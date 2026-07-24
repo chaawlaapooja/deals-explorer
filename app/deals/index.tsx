@@ -1,9 +1,17 @@
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { Button, StyleSheet, Text, View } from 'react-native';
+
+import { useAuth } from '@/src/providers/AuthProvider';
 
 const SAMPLE_DEAL_ID = 'deal-001';
 
 export default function DealsScreen() {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Redirect href="/sign-in" />;
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Deals</Text>

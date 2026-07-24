@@ -1,7 +1,15 @@
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { Button, StyleSheet, Text, View } from 'react-native';
 
+import { useAuth } from '@/src/providers/AuthProvider';
+
 export default function SuccessScreen() {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Redirect href="/sign-in" />;
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Success</Text>

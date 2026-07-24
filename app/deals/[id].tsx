@@ -1,8 +1,15 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { Button, StyleSheet, Text, View } from 'react-native';
 
+import { useAuth } from '@/src/providers/AuthProvider';
+
 export default function DealDetailScreen() {
+  const { isAuthenticated } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
+
+  if (!isAuthenticated) {
+    return <Redirect href="/sign-in" />;
+  }
 
   return (
     <View style={styles.container}>
