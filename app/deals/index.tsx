@@ -1,23 +1,38 @@
 import { FlashList } from '@shopify/flash-list';
 import { Redirect } from 'expo-router';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DealCard } from '@/src/features/deals/components/DealCard';
 import { useDeals } from '@/src/features/deals/hooks/useDeals';
+import {
+  filterDeals,
+  type StatusFilter,
+} from '@/src/features/deals/utils/filterDeals';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { colors, radius, spacing, typography } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 
+const STATUS_CHIPS: readonly { readonly label: string; readonly value: StatusFilter }[] = [
+  { label: 'All', value: 'all' },
+  { label: 'Draft', value: 'draft' },
+  { label: 'Active', value: 'active' },
+  { label: 'Closed', value: 'closed' },
+];
+
 export default function DealsScreen() {
   const { isAuthenticated } = useAuth();
-  const { data, isPending, isError, refetch } = useDeals();
+  const { data, isPending, isError, refetch, isRefetching } = useDeals();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   if (!isAuthenticated) {
     return <Redirect href="/sign-in" />;
@@ -63,7 +78,9 @@ export default function DealsScreen() {
     );
   }
 
-  const totalRaised = data.reduce(
+  const filteredDeals = filterDeals(data, searchQuery, statusFilter);
+
+  const totalRaised = filteredDeals.reduce(
     (sum, deal) => sum + deal.stats.total_raised_subscribed,
     0,
   );
@@ -71,15 +88,88 @@ export default function DealsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <FlashList
-        data={data}
+        data={[...filteredDeals]}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        refreshing={isRefetching}
+        onRefresh={() => {
+          void refetch();
+        }}
         ListHeaderComponent={
-          <SummaryHeader dealCount={data.length} totalRaised={totalRaised} />
+          <ListHeader
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            dealCount={filteredDeals.length}
+            totalRaised={totalRaised}
+          />
+        }
+        ListEmptyComponent={
+          <Text style={styles.emptySearch}>No deals match your filters.</Text>
         }
         renderItem={({ item }) => <DealCard deal={item} />}
       />
     </SafeAreaView>
+  );
+}
+
+function ListHeader({
+  searchQuery,
+  onSearchChange,
+  statusFilter,
+  onStatusChange,
+  dealCount,
+  totalRaised,
+}: {
+  readonly searchQuery: string;
+  readonly onSearchChange: (value: string) => void;
+  readonly statusFilter: StatusFilter;
+  readonly onStatusChange: (value: StatusFilter) => void;
+  readonly dealCount: number;
+  readonly totalRaised: number;
+}) {
+  return (
+    <View style={styles.header}>
+      <TextInput
+        style={styles.searchInput}
+        value={searchQuery}
+        onChangeText={onSearchChange}
+        placeholder="Search deals"
+        placeholderTextColor={colors.muted}
+        autoCapitalize="none"
+        autoCorrect={false}
+        clearButtonMode="while-editing"
+        accessibilityLabel="Search deals"
+        accessibilityRole="search"
+      />
+
+      <View style={styles.chips}>
+        {STATUS_CHIPS.map((chip) => {
+          const isSelected = statusFilter === chip.value;
+
+          return (
+            <Pressable
+              key={chip.value}
+              style={[styles.chip, isSelected && styles.chipSelected]}
+              onPress={() => onStatusChange(chip.value)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={`Filter ${chip.label}`}>
+              <Text
+                style={[
+                  styles.chipText,
+                  isSelected && styles.chipTextSelected,
+                ]}>
+                {chip.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <SummaryHeader dealCount={dealCount} totalRaised={totalRaised} />
+    </View>
   );
 }
 
@@ -121,6 +211,12 @@ const styles = StyleSheet.create({
     color: colors.black,
     textAlign: 'center',
   },
+  emptySearch: {
+    fontSize: typography.sizes.md,
+    color: colors.muted,
+    textAlign: 'center',
+    paddingVertical: spacing.xl,
+  },
   retryButton: {
     backgroundColor: colors.brand,
     paddingHorizontal: spacing.lg,
@@ -134,6 +230,45 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: spacing.lg,
+  },
+  header: {
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + spacing.xs,
+    fontSize: typography.sizes.md,
+    color: colors.black,
+    backgroundColor: colors.white,
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.white,
+  },
+  chipSelected: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
+  },
+  chipText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: '600',
+    color: colors.muted,
+  },
+  chipTextSelected: {
+    color: colors.white,
   },
   summary: {
     flexDirection: 'row',
