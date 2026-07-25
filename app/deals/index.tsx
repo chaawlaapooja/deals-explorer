@@ -1,6 +1,6 @@
 import { FlashList } from '@shopify/flash-list';
 import { Redirect } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -78,11 +78,18 @@ export default function DealsScreen() {
     );
   }
 
-  const filteredDeals = filterDeals(data, searchQuery, statusFilter);
+  const filteredDeals = useMemo(
+    () => filterDeals(data, searchQuery, statusFilter),
+    [data, searchQuery, statusFilter],
+  );
 
-  const totalRaised = filteredDeals.reduce(
-    (sum, deal) => sum + deal.stats.total_raised_subscribed,
-    0,
+  const totalRaised = useMemo(
+    () =>
+      filteredDeals.reduce(
+        (sum, deal) => sum + deal.stats.total_raised_subscribed,
+        0,
+      ),
+    [filteredDeals],
   );
 
   return (
