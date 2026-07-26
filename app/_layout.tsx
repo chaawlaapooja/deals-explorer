@@ -15,7 +15,10 @@ export default function RootLayout() {
           name="deals/[id]"
           options={{ headerShown: true, title: 'Deal Detail' }}
         />
-        <Stack.Screen name="invest/[id]" />
+        <Stack.Screen name="invest/[id]" options={{
+          headerShown: true,
+          title: 'Invest',
+        }} />
         <Stack.Screen name="success" />
       </Stack>
     </AppProvider>
