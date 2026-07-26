@@ -11,7 +11,10 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="sign-in" />
         <Stack.Screen name="deals/index" />
-        <Stack.Screen name="deals/[id]" />
+        <Stack.Screen
+          name="deals/[id]"
+          options={{ headerShown: true, title: 'Deal Detail' }}
+        />
         <Stack.Screen name="invest/[id]" />
         <Stack.Screen name="success" />
       </Stack>
