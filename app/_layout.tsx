@@ -13,7 +13,7 @@ export default function RootLayout() {
         <Stack.Screen name="deals/index" />
         <Stack.Screen
           name="deals/[id]"
-          options={{ headerShown: true, title: 'Deal Detail' }}
+          options={{ headerShown: true, title: 'Deal Detail', headerBackTitle: 'All Deals' }}
         />
         <Stack.Screen name="invest/[id]" options={{
           headerShown: true,

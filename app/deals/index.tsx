@@ -1,16 +1,12 @@
 import { FlashList } from '@shopify/flash-list';
 import { Redirect } from 'expo-router';
 import { useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { EmptyState } from '@/src/components/EmptyState';
+import { ErrorState } from '@/src/components/ErrorState';
+import { LoadingState } from '@/src/components/LoadingState';
+import { ScreenContainer } from '@/src/components/ScreenContainer';
 import { DealCard } from '@/src/features/deals/components/DealCard';
 import { useDeals } from '@/src/features/deals/hooks/useDeals';
 import {
@@ -21,12 +17,17 @@ import { useAuth } from '@/src/providers/AuthProvider';
 import { colors, radius, spacing, typography } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 
-const STATUS_CHIPS: readonly { readonly label: string; readonly value: StatusFilter }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Draft', value: 'draft' },
-  { label: 'Active', value: 'active' },
-  { label: 'Closed', value: 'closed' },
-];
+const STATUS_CHIPS: readonly {
+  readonly label: string;
+  readonly value: StatusFilter;
+}[] = [
+    { label: 'All', value: 'all' },
+    { label: 'Draft', value: 'draft' },
+    { label: 'Active', value: 'active' },
+    { label: 'Closed', value: 'closed' },
+  ];
+
+const DETAIL_EDGES = undefined;
 
 export default function DealsScreen() {
   const { isAuthenticated } = useAuth();
@@ -34,52 +35,8 @@ export default function DealsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
-  if (!isAuthenticated) {
-    return <Redirect href="/sign-in" />;
-  }
-
-  if (isPending) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.brand} />
-          <Text style={styles.message}>Loading deals...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (isError) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.centered}>
-          <Text style={styles.message}>Unable to load deals.</Text>
-          <Pressable
-            style={styles.retryButton}
-            onPress={() => {
-              void refetch();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Retry">
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.centered}>
-          <Text style={styles.message}>No deals available.</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   const filteredDeals = useMemo(
-    () => filterDeals(data, searchQuery, statusFilter),
+    () => filterDeals(data ?? [], searchQuery, statusFilter),
     [data, searchQuery, statusFilter],
   );
 
@@ -92,8 +49,41 @@ export default function DealsScreen() {
     [filteredDeals],
   );
 
+  if (!isAuthenticated) {
+    return <Redirect href="/sign-in" />;
+  }
+
+  if (isPending) {
+    return (
+      <ScreenContainer>
+        <LoadingState message="Loading deals..." />
+      </ScreenContainer>
+    );
+  }
+
+  if (isError) {
+    return (
+      <ScreenContainer>
+        <ErrorState
+          message="Unable to load deals."
+          onRetry={() => {
+            void refetch();
+          }}
+        />
+      </ScreenContainer>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <ScreenContainer>
+        <EmptyState message="No deals available." />
+      </ScreenContainer>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ScreenContainer edges={DETAIL_EDGES}>
       <FlashList
         data={[...filteredDeals]}
         keyExtractor={(item) => item.id}
@@ -113,11 +103,11 @@ export default function DealsScreen() {
           />
         }
         ListEmptyComponent={
-          <Text style={styles.emptySearch}>No deals match your filters.</Text>
+          <EmptyState message="No deals match your filters." muted />
         }
         renderItem={({ item }) => <DealCard deal={item} />}
       />
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 
@@ -202,39 +192,6 @@ function SummaryHeader({
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  message: {
-    fontSize: typography.sizes.md,
-    color: colors.black,
-    textAlign: 'center',
-  },
-  emptySearch: {
-    fontSize: typography.sizes.md,
-    color: colors.muted,
-    textAlign: 'center',
-    paddingVertical: spacing.xl,
-  },
-  retryButton: {
-    backgroundColor: colors.brand,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + spacing.xs,
-    borderRadius: radius.md,
-  },
-  retryButtonText: {
-    color: colors.white,
-    fontSize: typography.sizes.md,
-    fontWeight: '600',
-  },
   listContent: {
     padding: spacing.lg,
   },

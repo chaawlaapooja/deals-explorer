@@ -24,6 +24,30 @@ import { colors, radius, spacing, typography } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 import { formatDate } from '@/src/utils/formatDate';
 
+function SummaryRow({
+  label,
+  value,
+  error = false,
+}: {
+  label: string;
+  value: string;
+  error?: boolean;
+}) {
+  return (
+    <View style={styles.summaryRow}>
+      <Text style={styles.summaryLabel}>{label}</Text>
+
+      <Text
+        style={[
+          styles.summaryValue,
+          error && styles.summaryError,
+        ]}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
 export default function InvestScreen() {
   const { isAuthenticated } = useAuth();
   const { id: idParam } = useLocalSearchParams<{ id: string }>();
@@ -146,13 +170,17 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
     );
   };
 
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={100}>
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.dealName}>{deal.name}</Text>
@@ -184,19 +212,30 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
                   accessibilityLabel={identity.legal_name}>
-                  <Text
-                    style={[
-                      styles.identityName,
-                      isSelected && styles.identityNameSelected,
-                    ]}>
-                    {identity.legal_name}
-                  </Text>
+                  <View style={styles.identityHeader}>
+                    <Text
+                      style={[
+                        styles.identityCheck,
+                        isSelected && styles.identityCheckSelected,
+                      ]}>
+                      {isSelected ? '✓' : '○'}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.identityName,
+                        isSelected && styles.identityNameSelected,
+                      ]}>
+                      {identity.legal_name}
+                    </Text>
+                  </View>
+
                   <Text
                     style={[
                       styles.identityMeta,
                       isSelected && styles.identityMetaSelected,
                     ]}>
-                    {identity.type} · {identity.country}
+                    {identity.type} • {identity.country}
                   </Text>
                 </Pressable>
               );
@@ -221,6 +260,41 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
           ) : null}
         </View>
 
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Investment Summary</Text>
+
+          <View style={styles.summaryCard}>
+            <SummaryRow
+              label="Identity"
+              value={selectedIdentity?.legal_name ?? '-'}
+            />
+
+            <SummaryRow
+              label="Amount"
+              value={
+                amountText
+                  ? formatCurrency(Number(amountText))
+                  : '-'
+              }
+            />
+
+            <SummaryRow
+              label="Minimum"
+              value={formatCurrency(deal.minimum_investment)}
+            />
+
+            <SummaryRow
+              label="Status"
+              value={
+                validationMessage
+                  ? validationMessage
+                  : '✓ Ready to invest'
+              }
+              error={!!validationMessage}
+            />
+          </View>
+        </View>
+
         <Pressable
           style={[styles.continueButton, !canContinue && styles.buttonDisabled]}
           onPress={handleContinue}
@@ -231,7 +305,11 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
           {isSubmitting ? (
             <ActivityIndicator color={colors.white} />
           ) : (
-            <Text style={styles.buttonText}>Continue</Text>
+            <Text style={styles.buttonText}>
+              {amountText.trim()
+                ? `Invest ${formatCurrency(Number(amountText))}`
+                : 'Continue'}
+            </Text>
           )}
         </Pressable>
       </ScrollView>
@@ -305,8 +383,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   identityItemSelected: {
+    borderWidth: 2,
     borderColor: colors.brand,
-    backgroundColor: colors.brand,
+    backgroundColor: '#F5F9FF',
+  },
+  identityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  identityCheck: {
+    marginRight: spacing.sm,
+    color: colors.muted,
+    fontSize: typography.sizes.md,
+  },
+
+  identityCheckSelected: {
+    color: colors.brand,
   },
   identityName: {
     fontSize: typography.sizes.md,
@@ -314,7 +407,7 @@ const styles = StyleSheet.create({
     color: colors.black,
   },
   identityNameSelected: {
-    color: colors.white,
+    color: colors.brand,
   },
   identityMeta: {
     fontSize: typography.sizes.sm,
@@ -322,7 +415,33 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   identityMetaSelected: {
-    color: colors.white,
+    color: colors.brand,
+  },
+  summaryCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  summaryLabel: {
+    color: colors.muted,
+    fontSize: typography.sizes.sm,
+  },
+
+  summaryValue: {
+    fontWeight: '600',
+    color: colors.black,
+  },
+
+  summaryError: {
+    color: colors.error,
   },
   input: {
     borderWidth: 1,
@@ -340,6 +459,8 @@ const styles = StyleSheet.create({
   validation: {
     fontSize: typography.sizes.sm,
     color: colors.error,
+    fontWeight: '500',
+    marginTop: spacing.xs,
   },
   message: {
     fontSize: typography.sizes.md,
