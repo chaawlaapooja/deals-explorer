@@ -167,7 +167,7 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
   }
 
   const handleContinue = () => {
-    if (!selectedIdentity || !acceptedTerms || !isAmountValid) {
+    if (isSubmitting || !selectedIdentity || !acceptedTerms || !isAmountValid) {
       return;
     }
 
@@ -266,7 +266,7 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
             onChangeText={(value) => {
               setAmountText(formatInputAmount(value));
             }}
-            placeholder="Enter amount"
+            placeholder={`Minimum ${formatCurrency(deal.minimum_investment)}`}
             placeholderTextColor={colors.muted}
             keyboardType="numeric"
             editable={!isSubmitting}
