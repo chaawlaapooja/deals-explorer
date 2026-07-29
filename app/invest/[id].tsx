@@ -179,7 +179,14 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
       },
       {
         onSuccess: () => {
-          router.replace('/success');
+          router.replace({
+            pathname: '/success',
+            params: {
+              dealName: deal.name,
+              identityName: selectedIdentity.legal_name,
+              amount: amountText.replace(/,/g, ''),
+            },
+          });
         },
       },
     );
