@@ -122,10 +122,14 @@ function getAmountValidationMessage(
     return 'Amount is required.';
   }
 
-  const amount = Number(trimmed);
+  const amount = Number(trimmed.replace(/,/g, ''));
 
   if (Number.isNaN(amount)) {
     return 'Enter a valid amount.';
+  }
+
+  if (amount <= 0) {
+    return 'Amount must be greater than zero.';
   }
 
   if (amount < minimumInvestment) {
@@ -141,6 +145,7 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
     null,
   );
   const [amountText, setAmountText] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const isSubmitting = createInvestment.isPending;
   const validationMessage = getAmountValidationMessage(
@@ -149,10 +154,20 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
   );
   const isAmountValid = validationMessage === null;
   const canContinue =
-    selectedIdentity !== null && isAmountValid && !isSubmitting;
+    selectedIdentity !== null && isAmountValid && acceptedTerms && !isSubmitting;
+
+  function formatInputAmount(value: string): string {
+    const digits = value.replace(/[^\d]/g, '');
+
+    if (!digits) {
+      return '';
+    }
+
+    return Number(digits).toLocaleString('en-US');
+  }
 
   const handleContinue = () => {
-    if (!selectedIdentity || !isAmountValid) {
+    if (!selectedIdentity || !acceptedTerms || !isAmountValid) {
       return;
     }
 
@@ -160,7 +175,7 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
       {
         dealId: deal.id,
         identity: selectedIdentity,
-        amount: Number(amountText.trim()),
+        amount: Number(amountText.replace(/,/g, '')),
       },
       {
         onSuccess: () => {
@@ -248,7 +263,9 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
           <TextInput
             style={[styles.input, isSubmitting && styles.inputDisabled]}
             value={amountText}
-            onChangeText={setAmountText}
+            onChangeText={(value) => {
+              setAmountText(formatInputAmount(value));
+            }}
             placeholder="Enter amount"
             placeholderTextColor={colors.muted}
             keyboardType="numeric"
@@ -270,10 +287,10 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
             />
 
             <SummaryRow
-              label="Amount"
+              label="Investment"
               value={
                 amountText
-                  ? formatCurrency(Number(amountText))
+                  ? formatCurrency(Number(amountText.replace(/,/g, '')))
                   : '-'
               }
             />
@@ -286,14 +303,36 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
             <SummaryRow
               label="Status"
               value={
-                validationMessage
-                  ? validationMessage
-                  : '✓ Ready to invest'
+                validationMessage ?? '✓ Ready to invest'
               }
               error={!!validationMessage}
             />
           </View>
         </View>
+
+        <Pressable
+          style={styles.checkboxRow}
+          onPress={() => setAcceptedTerms(previous => !previous)}
+          accessibilityRole="checkbox"
+          accessibilityState={{
+            checked: acceptedTerms,
+          }}
+        >
+          <View
+            style={[
+              styles.checkbox,
+              acceptedTerms && styles.checkboxChecked,
+            ]}
+          >
+            {acceptedTerms && (
+              <Text style={styles.checkboxTick}>✓</Text>
+            )}
+          </View>
+
+          <Text style={styles.checkboxLabel}>
+            I agree to the investment terms and subscription documents.
+          </Text>
+        </Pressable>
 
         <Pressable
           style={[styles.continueButton, !canContinue && styles.buttonDisabled]}
@@ -307,7 +346,7 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
           ) : (
             <Text style={styles.buttonText}>
               {amountText.trim()
-                ? `Invest ${formatCurrency(Number(amountText))}`
+                ? `Invest ${formatCurrency(Number(amountText.replace(/,/g, '')))}`
                 : 'Continue'}
             </Text>
           )}
@@ -472,6 +511,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm + spacing.xs,
     borderRadius: radius.md,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  checkboxChecked: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
+  },
+
+  checkboxTick: {
+    color: colors.white,
+    fontWeight: '700',
+  },
+
+  checkboxLabel: {
+    flex: 1,
+    color: colors.black,
+    fontSize: typography.sizes.sm,
   },
   continueButton: {
     backgroundColor: colors.brand,
