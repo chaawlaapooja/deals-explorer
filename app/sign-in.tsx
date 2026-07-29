@@ -40,8 +40,21 @@ function deriveFirstName(email: string): string {
   return firstPart.charAt(0).toUpperCase() + firstPart.slice(1).toLowerCase();
 }
 
+function splitName(fullName: string): {
+  first_name: string;
+  last_name: string;
+} {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+
+  return {
+    first_name: parts[0] ?? '',
+    last_name: parts.slice(1).join(' '),
+  };
+}
+
 export default function SignInScreen() {
   const { isAuthenticated, signIn } = useAuth();
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
 
   if (isAuthenticated) {
@@ -50,18 +63,20 @@ export default function SignInScreen() {
 
   const normalizedEmail = email.trim().toLowerCase();
   const canContinue =
-    normalizedEmail.length > 0 && isValidEmail(normalizedEmail);
+    fullName.trim().length > 0 && normalizedEmail.length > 0 && isValidEmail(normalizedEmail);
 
   const handleContinue = () => {
     if (!canContinue) {
       return;
     }
 
+    const { first_name, last_name } = splitName(fullName);
+
     const user: AuthUser = {
       id: createUserId(),
       email: normalizedEmail,
-      first_name: deriveFirstName(normalizedEmail),
-      last_name: '',
+      first_name,
+      last_name,
     };
 
     signIn(user);
@@ -77,8 +92,21 @@ export default function SignInScreen() {
           <View style={styles.container}>
             <Text style={styles.title}>Sign In</Text>
             <Text style={styles.description}>
-              Enter your email to continue to Mini Deals Explorer.
+              Enter your name & email to continue to Mini Deals Explorer.
             </Text>
+
+            <TextInput
+              style={styles.input}
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Full Name"
+              placeholderTextColor="#999999"
+              autoCapitalize="words"
+              autoCorrect={false}
+              autoComplete='name'
+              autoFocus
+              returnKeyType="next"
+            />
 
             <TextInput
               style={styles.input}
@@ -89,7 +117,7 @@ export default function SignInScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              autoFocus
+              autoComplete='email'
               returnKeyType="done"
               onSubmitEditing={handleContinue}
             />

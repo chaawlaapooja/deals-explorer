@@ -1,8 +1,3 @@
-import { FlashList } from '@shopify/flash-list';
-import { Redirect } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-
 import { EmptyState } from '@/src/components/EmptyState';
 import { ErrorState } from '@/src/components/ErrorState';
 import { LoadingState } from '@/src/components/LoadingState';
@@ -16,6 +11,10 @@ import {
 import { useAuth } from '@/src/providers/AuthProvider';
 import { colors, radius, spacing, typography } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/formatCurrency';
+import { FlashList } from '@shopify/flash-list';
+import { Redirect } from 'expo-router';
+import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 const STATUS_CHIPS: readonly {
   readonly label: string;
@@ -84,24 +83,20 @@ export default function DealsScreen() {
 
   return (
     <ScreenContainer edges={DETAIL_EDGES}>
+      <ListHeader
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+      />
       <FlashList
-        data={[...filteredDeals]}
+        data={filteredDeals}
+        ListHeaderComponent={<SummaryHeader dealCount={filteredDeals.length} totalRaised={totalRaised} />
+        }
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         refreshing={isRefetching}
-        onRefresh={() => {
-          void refetch();
-        }}
-        ListHeaderComponent={
-          <ListHeader
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            statusFilter={statusFilter}
-            onStatusChange={setStatusFilter}
-            dealCount={filteredDeals.length}
-            totalRaised={totalRaised}
-          />
-        }
+        onRefresh={refetch}
         ListEmptyComponent={
           <EmptyState message="No deals match your filters." muted />
         }
@@ -116,15 +111,11 @@ function ListHeader({
   onSearchChange,
   statusFilter,
   onStatusChange,
-  dealCount,
-  totalRaised,
 }: {
   readonly searchQuery: string;
   readonly onSearchChange: (value: string) => void;
   readonly statusFilter: StatusFilter;
   readonly onStatusChange: (value: StatusFilter) => void;
-  readonly dealCount: number;
-  readonly totalRaised: number;
 }) {
   return (
     <View style={styles.header}>
@@ -139,6 +130,8 @@ function ListHeader({
         clearButtonMode="while-editing"
         accessibilityLabel="Search deals"
         accessibilityRole="search"
+        returnKeyType="search"
+        submitBehavior="submit"
       />
 
       <View style={styles.chips}>
@@ -165,7 +158,6 @@ function ListHeader({
         })}
       </View>
 
-      <SummaryHeader dealCount={dealCount} totalRaised={totalRaised} />
     </View>
   );
 }
@@ -197,7 +189,7 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: spacing.md,
-    marginBottom: spacing.md,
+    marginHorizontal: spacing.xl,
   },
   searchInput: {
     borderWidth: 1,
@@ -238,6 +230,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
     marginBottom: spacing.lg,
+    marginHorizontal: spacing.sm
   },
   summaryItem: {
     flex: 1,
