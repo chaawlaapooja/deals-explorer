@@ -3,13 +3,20 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, spacing, typography } from '@/src/theme';
 
-const DOCUMENTS = [
+const DOCUMENTS: readonly string[] = [
     'Subscription Agreement.pdf',
     'Private Placement Memorandum.pdf',
     'Investor Presentation.pdf',
-] as const;
+];
 
 export function DealDocumentsTab() {
+    if (DOCUMENTS.length === 0) {
+        return (
+            <View style={styles.container}>
+                <Text>No documents available.</Text>
+            </View>
+        );
+    }
     return (
         <View style={styles.container}>
             {DOCUMENTS.map((document) => (
@@ -36,7 +43,6 @@ const styles = StyleSheet.create({
     container: {
         gap: spacing.md,
     },
-
     card: {
         flexDirection: 'row',
         alignItems: 'center',
