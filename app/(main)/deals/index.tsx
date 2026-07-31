@@ -91,7 +91,8 @@ export default function DealsScreen() {
       />
       <FlashList
         data={filteredDeals}
-        ListHeaderComponent={<SummaryHeader dealCount={filteredDeals.length} totalRaised={totalRaised} />
+        ListHeaderComponent={
+          <SummaryHeader dealCount={filteredDeals.length} totalRaised={totalRaised} />
         }
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
