@@ -20,6 +20,7 @@ import { useCreateInvestment } from '@/src/features/investments/hooks/useCreateI
 import { identities } from '@/src/features/investments/mocks/identities';
 import type { Identity } from '@/src/features/investments/types/identity';
 import { useAuth } from '@/src/providers/AuthProvider';
+import { useMyInvestments } from '@/src/providers/MyInvestmentsProvider';
 import { colors, radius, spacing, typography } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 import { formatDate } from '@/src/utils/formatDate';
@@ -141,6 +142,7 @@ function getAmountValidationMessage(
 
 function InvestForm({ deal }: { readonly deal: Deal }) {
   const createInvestment = useCreateInvestment();
+  const { addMyInvestment } = useMyInvestments();
   const [selectedIdentity, setSelectedIdentity] = useState<Identity | null>(
     null,
   );
@@ -178,7 +180,8 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
         amount: Number(amountText.replace(/,/g, '')),
       },
       {
-        onSuccess: () => {
+        onSuccess: (investment) => {
+          addMyInvestment(investment);
           router.replace({
             pathname: '/success',
             params: {

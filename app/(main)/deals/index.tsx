@@ -41,11 +41,11 @@ export default function DealsScreen() {
 
   const totalRaised = useMemo(
     () =>
-      filteredDeals.reduce(
+      (data ?? []).reduce(
         (sum, deal) => sum + deal.stats.total_raised_subscribed,
         0,
       ),
-    [filteredDeals],
+    [data],
   );
 
   if (!isAuthenticated) {
@@ -91,7 +91,8 @@ export default function DealsScreen() {
       />
       <FlashList
         data={filteredDeals}
-        ListHeaderComponent={<SummaryHeader dealCount={filteredDeals.length} totalRaised={totalRaised} />
+        ListHeaderComponent={
+          <SummaryHeader dealCount={data.length} totalRaised={totalRaised} />
         }
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
