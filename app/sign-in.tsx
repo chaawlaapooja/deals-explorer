@@ -29,17 +29,6 @@ function createUserId(): string {
   return `user-${Date.now()}`;
 }
 
-function deriveFirstName(email: string): string {
-  const prefix = email.split('@')[0] ?? '';
-  const firstPart = prefix.split('.')[0] ?? '';
-
-  if (!firstPart) {
-    return '';
-  }
-
-  return firstPart.charAt(0).toUpperCase() + firstPart.slice(1).toLowerCase();
-}
-
 function splitName(fullName: string): {
   first_name: string;
   last_name: string;
