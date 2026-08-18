@@ -30,7 +30,7 @@ const DETAIL_EDGES = undefined;
 
 export default function DealsScreen() {
   const { isAuthenticated } = useAuth();
-  const { data, isPending, isError, refetch, isRefetching } = useDeals();
+  const { data, isPending, isError, refetch, isRefetching, isRefetchError } = useDeals();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
@@ -52,7 +52,7 @@ export default function DealsScreen() {
     return <Redirect href="/sign-in" />;
   }
 
-  if (isPending) {
+  if (isPending && !data) {
     return (
       <ScreenContainer>
         <LoadingState message="Loading deals..." />
@@ -60,7 +60,7 @@ export default function DealsScreen() {
     );
   }
 
-  if (isError) {
+  if (isError && !data) {
     return (
       <ScreenContainer>
         <ErrorState
@@ -89,6 +89,11 @@ export default function DealsScreen() {
         statusFilter={statusFilter}
         onStatusChange={setStatusFilter}
       />
+      {isRefetchError && data ? (
+        <Text style={styles.cacheNotice}>
+          Showing the last available deals.
+        </Text>
+      ) : null}
       <FlashList
         data={filteredDeals}
         ListHeaderComponent={
@@ -245,5 +250,11 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xl,
     fontWeight: '700',
     color: colors.black,
+  },
+  cacheNotice: {
+    margin: spacing.xl,
+    marginBottom: spacing.sm,
+    fontSize: typography.sizes.sm,
+    color: colors.muted,
   },
 });
