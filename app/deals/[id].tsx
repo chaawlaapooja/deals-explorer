@@ -1,14 +1,10 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { EmptyState } from '@/src/components/EmptyState';
+import { ErrorState } from '@/src/components/ErrorState';
+import { LoadingState } from '@/src/components/LoadingState';
 import { DealDocumentsTab } from '@/src/features/deals/components/DealDocumentsTab';
 import { DealInvestorsTab } from '@/src/features/deals/components/DealInvestorsTab';
 import { DealOverviewTab } from '@/src/features/deals/components/DealOverviewTab';
@@ -37,44 +33,35 @@ export default function DealDetailScreen() {
 
   if (isPending) {
     return (
-      <CenteredState>
-        <ActivityIndicator size="large" color={colors.brand} />
-        <Text style={styles.message}>Loading deal...</Text>
-      </CenteredState>
+      <View style={styles.screen}>
+        <LoadingState message="Loading deal..." />
+      </View>
     );
   }
 
   if (isError) {
     return (
-      <CenteredState>
-        <Text style={styles.message}>Unable to load deal.</Text>
-
-        <Pressable
-          style={styles.actionButton}
-          onPress={() => {
+      <View style={styles.screen}>
+        <ErrorState
+          message="Unable to load deal."
+          onRetry={() => {
             void refetch();
           }}
-          accessibilityRole="button"
-          accessibilityLabel="Retry">
-          <Text style={styles.actionButtonText}>Retry</Text>
-        </Pressable>
-      </CenteredState>
+        />
+      </View>
     );
   }
 
   if (!deal) {
     return (
-      <CenteredState>
-        <Text style={styles.message}>Deal not found.</Text>
-
-        <Pressable
-          style={styles.actionButton}
-          onPress={() => router.replace('/deals')}
-          accessibilityRole="button"
-          accessibilityLabel="Back to Deals">
-          <Text style={styles.actionButtonText}>Back to Deals</Text>
-        </Pressable>
-      </CenteredState>
+      <View style={styles.screen}>
+        <EmptyState
+          message="Deal not found."
+          actionLabel="Back to Deals"
+          onAction={() => router.replace('/deals')}
+          accessibilityLabel="Back to Deals"
+        />
+      </View>
     );
   }
 
@@ -82,8 +69,7 @@ export default function DealDetailScreen() {
 }
 
 function DealDetailContent({ deal }: { readonly deal: Deal }) {
-  const [selectedTab, setSelectedTab] =
-    useState<DealDetailTab>('overview');
+  const [selectedTab, setSelectedTab] = useState<DealDetailTab>('overview');
 
   const renderTab = () => {
     switch (selectedTab) {
@@ -109,25 +95,15 @@ function DealDetailContent({ deal }: { readonly deal: Deal }) {
         <View style={styles.header}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>{deal.name}</Text>
-
             <StatusBadge status={deal.status} />
           </View>
 
           <Text style={styles.entity}>{deal.entity_name}</Text>
-
-          <Text style={styles.meta}>
-            {formatDealType(deal.type)}
-          </Text>
-
-          <Text style={styles.meta}>
-            Closes {formatDate(deal.closing_date)}
-          </Text>
+          <Text style={styles.meta}>{formatDealType(deal.type)}</Text>
+          <Text style={styles.meta}>Closes {formatDate(deal.closing_date)}</Text>
         </View>
 
-        <DealTabs
-          selectedTab={selectedTab}
-          onTabChange={setSelectedTab}
-        />
+        <DealTabs selectedTab={selectedTab} onTabChange={setSelectedTab} />
 
         {renderTab()}
       </ScrollView>
@@ -138,21 +114,11 @@ function DealDetailContent({ deal }: { readonly deal: Deal }) {
           onPress={() => router.push(`/invest/${deal.id}`)}
           accessibilityRole="button"
           accessibilityLabel="Invest Now">
-          <Text style={styles.investButtonText}>
-            Invest Now
-          </Text>
+          <Text style={styles.investButtonText}>Invest Now</Text>
         </Pressable>
       </View>
     </View>
   );
-}
-
-function CenteredState({
-  children,
-}: {
-  readonly children: React.ReactNode;
-}) {
-  return <View style={styles.centered}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -160,57 +126,40 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.white,
   },
-
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-    gap: spacing.md,
-    backgroundColor: colors.white,
-  },
-
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xl * 2,
     gap: spacing.lg,
   },
-
   header: {
     gap: spacing.sm,
   },
-
   titleRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: spacing.sm,
   },
-
   title: {
     flex: 1,
     fontSize: typography.sizes.xl,
     fontWeight: '700',
     color: colors.black,
   },
-
   entity: {
     fontSize: typography.sizes.md,
     color: colors.muted,
   },
-
   meta: {
     fontSize: typography.sizes.md,
     color: colors.black,
   },
-
   bottomBar: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
     padding: spacing.lg,
     backgroundColor: colors.white,
   },
-
   investButton: {
     backgroundColor: colors.brand,
     borderRadius: radius.md,
@@ -219,29 +168,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     minHeight: 52,
   },
-
   investButtonText: {
     color: colors.white,
     fontSize: typography.sizes.md,
     fontWeight: '600',
-  },
-
-  actionButton: {
-    backgroundColor: colors.brand,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + spacing.xs,
-    borderRadius: radius.md,
-  },
-
-  actionButtonText: {
-    color: colors.white,
-    fontSize: typography.sizes.md,
-    fontWeight: '600',
-  },
-
-  message: {
-    fontSize: typography.sizes.md,
-    color: colors.black,
-    textAlign: 'center',
   },
 });

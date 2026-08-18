@@ -11,8 +11,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/src/components/EmptyState';
+import { ErrorState } from '@/src/components/ErrorState';
+import { LoadingState } from '@/src/components/LoadingState';
+import { ScreenContainer } from '@/src/components/ScreenContainer';
 import { useDealById } from '@/src/features/deals/hooks/useDealById';
 import type { Deal } from '@/src/features/deals/types/deal';
 import { formatDealType } from '@/src/features/deals/utils/formatDealType';
@@ -25,91 +28,38 @@ import { colors, radius, spacing, typography } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 import { formatDate } from '@/src/utils/formatDate';
 
+const DETAIL_EDGES = ['bottom', 'left', 'right'] as const;
+
+function parseAmount(value: string): number {
+  return Number(value.replace(/,/g, ''));
+}
+
+function formatAmountInput(value: string): string {
+  const digits = value.replace(/[^\d]/g, '');
+
+  if (!digits) {
+    return '';
+  }
+
+  return Number(digits).toLocaleString('en-US');
+}
+
 function SummaryRow({
   label,
   value,
   error = false,
 }: {
-  label: string;
-  value: string;
-  error?: boolean;
+  readonly label: string;
+  readonly value: string;
+  readonly error?: boolean;
 }) {
   return (
     <View style={styles.summaryRow}>
       <Text style={styles.summaryLabel}>{label}</Text>
-
-      <Text
-        style={[
-          styles.summaryValue,
-          error && styles.summaryError,
-        ]}>
+      <Text style={[styles.summaryValue, error && styles.summaryError]}>
         {value}
       </Text>
     </View>
-  );
-}
-
-export default function InvestScreen() {
-  const { isAuthenticated } = useAuth();
-  const { id: idParam } = useLocalSearchParams<{ id: string }>();
-  const id = typeof idParam === 'string' ? idParam : '';
-  const { data: deal, isPending, isError, refetch } = useDealById(id);
-
-  if (!isAuthenticated) {
-    return <Redirect href="/sign-in" />;
-  }
-
-  if (isPending) {
-    return (
-      <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.brand} />
-          <Text style={styles.message}>Loading deal...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (isError) {
-    return (
-      <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
-        <View style={styles.centered}>
-          <Text style={styles.message}>Unable to load deal.</Text>
-          <Pressable
-            style={styles.button}
-            onPress={() => {
-              void refetch();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Retry">
-            <Text style={styles.buttonText}>Retry</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (!deal) {
-    return (
-      <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
-        <View style={styles.centered}>
-          <Text style={styles.message}>Deal not found.</Text>
-          <Pressable
-            style={styles.button}
-            onPress={() => router.replace('/deals')}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Deals">
-            <Text style={styles.buttonText}>Back to Deals</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
-      <InvestForm deal={deal} />
-    </SafeAreaView>
   );
 }
 
@@ -123,7 +73,7 @@ function getAmountValidationMessage(
     return 'Amount is required.';
   }
 
-  const amount = Number(trimmed.replace(/,/g, ''));
+  const amount = parseAmount(trimmed);
 
   if (Number.isNaN(amount)) {
     return 'Enter a valid amount.';
@@ -138,6 +88,57 @@ function getAmountValidationMessage(
   }
 
   return null;
+}
+
+export default function InvestScreen() {
+  const { isAuthenticated } = useAuth();
+  const { id: idParam } = useLocalSearchParams<{ id: string }>();
+  const id = typeof idParam === 'string' ? idParam : '';
+  const { data: deal, isPending, isError, refetch } = useDealById(id);
+
+  if (!isAuthenticated) {
+    return <Redirect href="/sign-in" />;
+  }
+
+  if (isPending) {
+    return (
+      <ScreenContainer edges={DETAIL_EDGES}>
+        <LoadingState message="Loading deal..." />
+      </ScreenContainer>
+    );
+  }
+
+  if (isError) {
+    return (
+      <ScreenContainer edges={DETAIL_EDGES}>
+        <ErrorState
+          message="Unable to load deal."
+          onRetry={() => {
+            void refetch();
+          }}
+        />
+      </ScreenContainer>
+    );
+  }
+
+  if (!deal) {
+    return (
+      <ScreenContainer edges={DETAIL_EDGES}>
+        <EmptyState
+          message="Deal not found."
+          actionLabel="Back to Deals"
+          onAction={() => router.replace('/deals')}
+          accessibilityLabel="Back to Deals"
+        />
+      </ScreenContainer>
+    );
+  }
+
+  return (
+    <ScreenContainer edges={DETAIL_EDGES}>
+      <InvestForm deal={deal} />
+    </ScreenContainer>
+  );
 }
 
 function InvestForm({ deal }: { readonly deal: Deal }) {
@@ -158,16 +159,6 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
   const canContinue =
     selectedIdentity !== null && isAmountValid && acceptedTerms && !isSubmitting;
 
-  function formatInputAmount(value: string): string {
-    const digits = value.replace(/[^\d]/g, '');
-
-    if (!digits) {
-      return '';
-    }
-
-    return Number(digits).toLocaleString('en-US');
-  }
-
   const handleContinue = () => {
     if (isSubmitting || !selectedIdentity || !acceptedTerms || !isAmountValid) {
       return;
@@ -177,7 +168,7 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
       {
         dealId: deal.id,
         identity: selectedIdentity,
-        amount: Number(amountText.replace(/,/g, '')),
+        amount: parseAmount(amountText),
       },
       {
         onSuccess: (investment) => {
@@ -194,7 +185,6 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
       },
     );
   };
-
 
   return (
     <KeyboardAvoidingView
@@ -274,7 +264,7 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
             style={[styles.input, isSubmitting && styles.inputDisabled]}
             value={amountText}
             onChangeText={(value) => {
-              setAmountText(formatInputAmount(value));
+              setAmountText(formatAmountInput(value));
             }}
             placeholder={`Minimum ${formatCurrency(deal.minimum_investment)}`}
             placeholderTextColor={colors.muted}
@@ -300,7 +290,7 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
               label="Investment"
               value={
                 amountText
-                  ? formatCurrency(Number(amountText.replace(/,/g, '')))
+                  ? formatCurrency(parseAmount(amountText))
                   : '-'
               }
             />
@@ -312,9 +302,7 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
 
             <SummaryRow
               label="Status"
-              value={
-                validationMessage ?? '✓ Ready to invest'
-              }
+              value={validationMessage ?? '✓ Ready to invest'}
               error={!!validationMessage}
             />
           </View>
@@ -322,21 +310,14 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
 
         <Pressable
           style={styles.checkboxRow}
-          onPress={() => setAcceptedTerms(previous => !previous)}
+          onPress={() => setAcceptedTerms((previous) => !previous)}
           accessibilityRole="checkbox"
           accessibilityState={{
             checked: acceptedTerms,
-          }}
-        >
+          }}>
           <View
-            style={[
-              styles.checkbox,
-              acceptedTerms && styles.checkboxChecked,
-            ]}
-          >
-            {acceptedTerms && (
-              <Text style={styles.checkboxTick}>✓</Text>
-            )}
+            style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
+            {acceptedTerms && <Text style={styles.checkboxTick}>✓</Text>}
           </View>
 
           <Text style={styles.checkboxLabel}>
@@ -356,7 +337,7 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
           ) : (
             <Text style={styles.buttonText}>
               {amountText.trim()
-                ? `Invest ${formatCurrency(Number(amountText.replace(/,/g, '')))}`
+                ? `Invest ${formatCurrency(parseAmount(amountText))}`
                 : 'Continue'}
             </Text>
           )}
@@ -367,19 +348,8 @@ function InvestForm({ deal }: { readonly deal: Deal }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
   flex: {
     flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-    gap: spacing.md,
   },
   content: {
     padding: spacing.lg,
@@ -434,19 +404,17 @@ const styles = StyleSheet.create({
   identityItemSelected: {
     borderWidth: 2,
     borderColor: colors.brand,
-    backgroundColor: '#F5F9FF',
+    backgroundColor: colors.brandSoft,
   },
   identityHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   identityCheck: {
     marginRight: spacing.sm,
     color: colors.muted,
     fontSize: typography.sizes.md,
   },
-
   identityCheckSelected: {
     color: colors.brand,
   },
@@ -473,22 +441,18 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.md,
   },
-
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-
   summaryLabel: {
     color: colors.muted,
     fontSize: typography.sizes.sm,
   },
-
   summaryValue: {
     fontWeight: '600',
     color: colors.black,
   },
-
   summaryError: {
     color: colors.error,
   },
@@ -511,23 +475,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: spacing.xs,
   },
-  message: {
-    fontSize: typography.sizes.md,
-    color: colors.black,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: colors.brand,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + spacing.xs,
-    borderRadius: radius.md,
-  },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
   },
-
   checkbox: {
     width: 24,
     height: 24,
@@ -537,17 +489,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   checkboxChecked: {
     backgroundColor: colors.brand,
     borderColor: colors.brand,
   },
-
   checkboxTick: {
     color: colors.white,
     fontWeight: '700',
   },
-
   checkboxLabel: {
     flex: 1,
     color: colors.black,

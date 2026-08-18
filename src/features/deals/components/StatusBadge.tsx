@@ -2,16 +2,13 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import type { DealStatus } from '@/src/features/deals/types/deal';
 import { colors, radius, spacing, typography } from '@/src/theme';
+import { capitalize } from '@/src/utils/capitalize';
 
 const STATUS_COLORS: Record<DealStatus, string> = {
   draft: colors.gray,
   active: colors.brand,
   closed: colors.darkGray,
 };
-
-function formatStatusLabel(status: DealStatus): string {
-  return status.charAt(0).toUpperCase() + status.slice(1);
-}
 
 interface StatusBadgeProps {
   readonly status: DealStatus;
@@ -20,7 +17,7 @@ interface StatusBadgeProps {
 export function StatusBadge({ status }: StatusBadgeProps) {
   return (
     <View style={[styles.badge, { backgroundColor: STATUS_COLORS[status] }]}>
-      <Text style={styles.badgeText}>{formatStatusLabel(status)}</Text>
+      <Text style={styles.badgeText}>{capitalize(status)}</Text>
     </View>
   );
 }

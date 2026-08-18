@@ -8,14 +8,11 @@ import type { Investment } from '@/src/features/investments/types/investment';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { useMyInvestments } from '@/src/providers/MyInvestmentsProvider';
 import { colors, radius, spacing, typography } from '@/src/theme';
+import { capitalize } from '@/src/utils/capitalize';
 import { formatCurrency } from '@/src/utils/formatCurrency';
 
 function getDealName(dealId: string): string {
   return deals.find((deal) => deal.id === dealId)?.name ?? 'Unknown deal';
-}
-
-function formatStatus(status: Investment['status']): string {
-  return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 export default function MyInvestmentsScreen() {
@@ -80,7 +77,7 @@ function InvestmentCard({
 
       <View style={styles.row}>
         <Text style={styles.label}>Status</Text>
-        <Text style={styles.status}>{formatStatus(investment.status)}</Text>
+        <Text style={styles.status}>{capitalize(investment.status)}</Text>
       </View>
     </View>
   );

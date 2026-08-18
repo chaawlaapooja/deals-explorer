@@ -1,3 +1,8 @@
+import { FlashList } from '@shopify/flash-list';
+import { Redirect } from 'expo-router';
+import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+
 import { EmptyState } from '@/src/components/EmptyState';
 import { ErrorState } from '@/src/components/ErrorState';
 import { LoadingState } from '@/src/components/LoadingState';
@@ -11,22 +16,16 @@ import {
 import { useAuth } from '@/src/providers/AuthProvider';
 import { colors, radius, spacing, typography } from '@/src/theme';
 import { formatCurrency } from '@/src/utils/formatCurrency';
-import { FlashList } from '@shopify/flash-list';
-import { Redirect } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 const STATUS_CHIPS: readonly {
   readonly label: string;
   readonly value: StatusFilter;
 }[] = [
-    { label: 'All', value: 'all' },
-    { label: 'Draft', value: 'draft' },
-    { label: 'Active', value: 'active' },
-    { label: 'Closed', value: 'closed' },
-  ];
-
-const DETAIL_EDGES = undefined;
+  { label: 'All', value: 'all' },
+  { label: 'Draft', value: 'draft' },
+  { label: 'Active', value: 'active' },
+  { label: 'Closed', value: 'closed' },
+];
 
 export default function DealsScreen() {
   const { isAuthenticated } = useAuth();
@@ -82,7 +81,7 @@ export default function DealsScreen() {
   }
 
   return (
-    <ScreenContainer edges={DETAIL_EDGES}>
+    <ScreenContainer>
       <ListHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}

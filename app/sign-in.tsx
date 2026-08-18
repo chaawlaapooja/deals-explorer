@@ -22,10 +22,6 @@ function isValidEmail(email: string): boolean {
 }
 
 function createUserId(): string {
-  // if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-  //   return crypto.randomUUID();
-  // }
-
   return `user-${Date.now()}`;
 }
 
@@ -92,7 +88,7 @@ export default function SignInScreen() {
               placeholderTextColor="#999999"
               autoCapitalize="words"
               autoCorrect={false}
-              autoComplete='name'
+              autoComplete="name"
               autoFocus
               returnKeyType="next"
             />
@@ -106,7 +102,7 @@ export default function SignInScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              autoComplete='email'
+              autoComplete="email"
               returnKeyType="done"
               onSubmitEditing={handleContinue}
             />
